@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "StreamShield",
+  "version": "1.0.1",
+  "description": "Blocks common ad networks, pop-ups, pop-unders, and known redirect traps while streaming.",
+  "permissions": [
+    "declarativeNetRequest",
+    "storage",
+    "tabs",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "StreamShield",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["page_guard.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "world": "MAIN"
+    },
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "streamshield_rules",
+        "enabled": true,
+        "path": "rules/blocklist.json"
+      }
+    ]
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["blocked.html", "blocked.js", "blocked.css"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "regexFilter": "^https?://([^/]+\\.)?(doubleclick\\.net|googlesyndication\\.com|googleadservices\\.com|adservice\\.google\\.[a-z.]+|googletagservices\\.com|adnxs\\.com|adsrvr\\.org|adform\\.net|criteo\\.com|criteo\\.net|pubmatic\\.com|rubiconproject\\.com|openx\\.net|casalemedia\\.com|3lift\\.com|indexww\\.com|sharethrough\\.com)(/|$)",
+      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "object", "xmlhttprequest", "ping", "media", "websocket", "other"]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "regexFilter": "^https?://([^/]+\\.)?(taboola\\.com|outbrain\\.com|mgid\\.com|revcontent\\.com|contentad\\.net|zemanta\\.com|adblade\\.com|nativeads\\.com|plista\\.com|nativo\\.com)(/|$)",
+      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "object", "xmlhttprequest", "ping", "media", "websocket", "other"]
+    }
+  },
+  {
+    "id": 3,
+    "priority": 2,
+    "action": { "type": "block" },
+    "condition": {
+      "regexFilter": "^https?://([^/]+\\.)?(propellerads\\.com|popads\\.net|popcash\\.net|onclicka\\.com|onclickads\\.net|exoclick\\.com|exosrv\\.com|juicyads\\.com|trafficjunky\\.net|adsterra\\.com|hilltopads\\.net|pushground\\.com|evadav\\.com|zeropark\\.com|clickadu\\.com|tsyndicate\\.com|realsrv\\.com|ad-maven\\.com)(/|$)",
+      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "object", "xmlhttprequest", "ping", "media", "websocket", "other"]
+    }
+  },
+  {
+    "id": 4,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "regexFilter": "^https?://([^/]+\\.)?(smartadserver\\.com|serving-sys\\.com|yieldmo\\.com|moatads\\.com|adroll\\.com|bidswitch\\.net|lijit\\.com|spotxchange\\.com|quantserve\\.com|scorecardresearch\\.com|bluekai\\.com|demdex\\.net)(/|$)",
+      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "object", "xmlhttprequest", "ping", "media", "websocket", "other"]
+    }
+  },
+  {
+    "id": 5,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "regexFilter": "^https?://[^/]+/[^?#]*(popunder|pop-under|popup-ad|interstitial-ad|adserver|ad-serving|clickunder)[^?#]*",
+      "domainType": "thirdParty",
+      "resourceTypes": ["sub_frame", "script", "image", "xmlhttprequest", "ping", "websocket", "other"]
+    }
+  },
+  {
+    "id": 6,
+    "priority": 3,
+    "action": { "type": "redirect", "redirect": { "extensionPath": "/blocked.html" } },
+    "condition": {
+      "regexFilter": "^https?://([^/]+\\.)?(popads\\.net|popcash\\.net|onclicka\\.com|onclickads\\.net|propellerads\\.com|exoclick\\.com|exosrv\\.com|adsterra\\.com|hilltopads\\.net|pushground\\.com|evadav\\.com|zeropark\\.com|clickadu\\.com|tsyndicate\\.com|realsrv\\.com|ad-maven\\.com)(/|$)",
+      "resourceTypes": ["main_frame"]
+    }
+  }
+]

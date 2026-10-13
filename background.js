@@ -9,16 +9,21 @@ const getHost = (rawUrl) => {
   try { return new URL(rawUrl).hostname; } catch (_) { return ''; }
 };
 
-const isProtected = async (url) => {
+const getProtection = async (url) => {
   const hostname = getHost(url);
-  if (!hostname) return true;
-  const { disabledHosts = [] } = await chrome.storage.local.get({ disabledHosts: [] });
-  return !disabledHosts.includes(hostname);
+  const { disabledHosts = [], strictHosts = [] } = await chrome.storage.local.get({
+    disabledHosts: [],
+    strictHosts: []
+  });
+  return {
+    enabled: !hostname || !disabledHosts.includes(hostname),
+    strict: Boolean(hostname && strictHosts.includes(hostname))
+  };
 };
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.get({ disabledHosts: [] }).then(({ disabledHosts }) => {
-    chrome.storage.local.set({ disabledHosts });
+  chrome.storage.local.get({ disabledHosts: [], strictHosts: [] }).then(({ disabledHosts, strictHosts }) => {
+    chrome.storage.local.set({ disabledHosts, strictHosts });
   });
 });
 
@@ -35,40 +40,57 @@ chrome.tabs.onCreated.addListener(async (tab) => {
   if (!tab.openerTabId) return;
   let opener;
   try { opener = await chrome.tabs.get(tab.openerTabId); } catch (_) { return; }
-  if (!(await isProtected(opener.url || ''))) return;
+  const protection = await getProtection(opener.url || '');
+  if (!protection.enabled) return;
 
-  pendingPopupTabs.set(tab.id, { openerTabId: tab.openerTabId, createdAt: Date.now() });
+  pendingPopupTabs.set(tab.id, {
+    openerTabId: tab.openerTabId,
+    openerHost: getHost(opener.url || ''),
+    strict: protection.strict,
+    createdAt: Date.now()
+  });
   setTimeout(async () => {
     const pending = pendingPopupTabs.get(tab.id);
     if (!pending) return;
-    pendingPopupTabs.delete(tab.id);
     try {
       const current = await chrome.tabs.get(tab.id);
       const url = current.pendingUrl || current.url || '';
-      if (!url || url === 'about:blank' || suspiciousHost.test(getHost(url))) {
+      const host = getHost(url);
+      const blank = !url || url === 'about:blank';
+      const strictCrossSite = pending.strict && (blank || (host && host !== pending.openerHost));
+      if (suspiciousHost.test(host) || strictCrossSite) {
+        pendingPopupTabs.delete(tab.id);
         await chrome.tabs.remove(tab.id);
         const count = (tabCounts.get(tab.openerTabId) || 0) + 1;
         tabCounts.set(tab.openerTabId, count);
         await chrome.action.setBadgeBackgroundColor({ tabId: tab.openerTabId, color: '#ef4444' });
         await chrome.action.setBadgeText({ tabId: tab.openerTabId, text: String(Math.min(count, 99)) });
+      } else if (!blank) {
+        pendingPopupTabs.delete(tab.id);
       }
     } catch (_) {}
   }, 350);
+  setTimeout(() => pendingPopupTabs.delete(tab.id), 10000);
 });
 
 chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
   if (details.frameId !== 0 || !/^https?:/.test(details.url)) return;
   const host = getHost(details.url);
 
-  if (pendingPopupTabs.has(details.tabId) && suspiciousHost.test(host)) {
+  const pending = pendingPopupTabs.get(details.tabId);
+  if (pending) {
+    const strictCrossSite = pending.strict && host && host !== pending.openerHost;
+    if (suspiciousHost.test(host) || strictCrossSite) {
+      pendingPopupTabs.delete(details.tabId);
+      try { await chrome.tabs.remove(details.tabId); } catch (_) {}
+      return;
+    }
     pendingPopupTabs.delete(details.tabId);
-    try { await chrome.tabs.remove(details.tabId); } catch (_) {}
-    return;
   }
 
   if (!suspiciousHost.test(host)) return;
   const previous = safeUrls.get(details.tabId);
-  if (!previous || !(await isProtected(previous))) return;
+  if (!previous || !(await getProtection(previous)).enabled) return;
   try { await chrome.tabs.update(details.tabId, { url: previous }); } catch (_) {}
 });
 

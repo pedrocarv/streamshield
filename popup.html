@@ -25,7 +25,17 @@
         <span class="slider"></span>
       </label>
     </div>
-    <p class="note">Blocks known ad networks, pop-ups, pop-unders, and suspicious redirects. Turn it off here if a trusted site needs a new window.</p>
+    <div class="control secondary">
+      <div>
+        <strong>Strict pop-up blocking</strong>
+        <span>Use only on troublesome sites</span>
+      </div>
+      <label class="switch">
+        <input id="strict" type="checkbox">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <p class="note">Balanced mode allows legitimate new windows while blocking known ad and redirect destinations. Strict mode blocks all cross-site pop-ups on this site.</p>
   </main>
   <script src="popup.js"></script>
 </body>

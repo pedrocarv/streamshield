@@ -8,17 +8,24 @@
 
   const hostname = location.hostname;
 
-  const applyState = (disabledHosts = []) => {
+  const applyState = (disabledHosts = [], strictHosts = []) => {
     const enabled = !disabledHosts.includes(hostname);
-    window.dispatchEvent(new CustomEvent(STATE_EVENT, { detail: enabled }));
+    const strict = enabled && strictHosts.includes(hostname);
+    window.dispatchEvent(new CustomEvent(STATE_EVENT, {
+      detail: JSON.stringify({ enabled, strict })
+    }));
     document.documentElement.toggleAttribute('data-streamshield-disabled', !enabled);
   };
 
-  chrome.storage.local.get({ disabledHosts: [] }, ({ disabledHosts }) => applyState(disabledHosts));
+  const refreshState = () => chrome.storage.local.get({ disabledHosts: [], strictHosts: [] }, (state) => {
+    applyState(state.disabledHosts, state.strictHosts);
+  });
+
+  refreshState();
 
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes.disabledHosts) {
-      applyState(changes.disabledHosts.newValue || []);
+    if (area === 'local' && (changes.disabledHosts || changes.strictHosts)) {
+      refreshState();
     }
   });
 

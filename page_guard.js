@@ -4,6 +4,7 @@
   const STATE_EVENT = '__streamshield_state_v1';
   const BLOCK_EVENT = '__streamshield_blocked_v1';
   let enabled = true;
+  let strict = false;
 
   const badHost = /(^|\.)(?:popads|popcash|onclicka|onclickads|propellerads|exoclick|exosrv|adsterra|hilltopads|pushground|evadav|zeropark|clickadu|tsyndicate|realsrv|ad-maven)\./i;
   const badWords = /(?:popunder|pop-under|clickunder|interstitial|redirect(?:or)?|adserver|ad-serving|push-notification|forced-click)/i;
@@ -26,7 +27,7 @@
     const url = parseUrl(value);
     if (!url) return true;
     if (url.protocol === 'javascript:' || url.protocol === 'data:') return true;
-    if (url.protocol === 'about:') return true;
+    if (url.protocol === 'about:') return false;
     return badHost.test(url.hostname) || badWords.test(url.href);
   };
 
@@ -65,7 +66,7 @@
     if (!enabled) return nativeOpen(url, target, features);
 
     const destination = String(url || 'about:blank');
-    if (isCrossOrigin(destination) || isSuspiciousUrl(destination)) {
+    if (isSuspiciousUrl(destination) || (strict && isCrossOrigin(destination))) {
       emitBlocked('popup', destination);
       return null;
     }
@@ -73,7 +74,16 @@
   };
 
   addEventListener(STATE_EVENT, (event) => {
-    enabled = event.detail !== false;
+    try {
+      const state = typeof event.detail === 'string'
+        ? JSON.parse(event.detail)
+        : { enabled: event.detail !== false, strict: false };
+      enabled = state.enabled !== false;
+      strict = state.strict === true;
+    } catch (_) {
+      enabled = true;
+      strict = false;
+    }
   }, true);
 
   addEventListener('click', (event) => {
@@ -90,7 +100,8 @@
     if (anchor) {
       const destination = anchor.href || anchor.getAttribute('href') || '';
       const externalNewTab = isCrossOrigin(destination) && (anchor.target === '_blank' || !event.isTrusted);
-      if (isSuspiciousUrl(destination) || externalNewTab || (overlay && isCrossOrigin(destination))) {
+      const strictPopup = strict && (externalNewTab || (overlay && isCrossOrigin(destination)));
+      if (isSuspiciousUrl(destination) || strictPopup) {
         event.preventDefault();
         event.stopImmediatePropagation();
         emitBlocked('redirect', destination);
@@ -98,7 +109,7 @@
       return;
     }
 
-    if (overlay) {
+    if (strict && overlay) {
       event.preventDefault();
       event.stopImmediatePropagation();
       emitBlocked('overlay', location.href);

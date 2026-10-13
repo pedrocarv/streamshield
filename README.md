@@ -16,15 +16,21 @@ It does not collect, store, or transmit browsing data.
 
 ## Controls
 
-Click the StreamShield toolbar icon to pause or resume protection for the
-current site. This is useful when a trusted site needs a legitimate pop-up.
-Chrome's Extensions page can disable or remove StreamShield entirely.
+Click the StreamShield toolbar icon to choose protection for the current site:
+
+- **Balanced protection** is the default. It allows legitimate new windows and
+  tabs while blocking known or clearly suspicious ad destinations.
+- **Strict pop-up blocking** is optional per site. Use it on streaming sites
+  that keep opening unknown pop-ups or redirecting the current tab.
+- The main protection switch pauses StreamShield completely on the current
+  site. Chrome's Extensions page can disable or remove it entirely.
 
 ## How it works
 
 - Declarative Net Request rules block requests to common advertising and
   pop-up networks.
-- A page-level guard prevents cross-origin pop-ups and suspicious redirects.
+- A page-level guard prevents suspicious pop-ups and redirects. Cross-site
+  windows are blocked broadly only for sites where strict mode is enabled.
 - Known advertising frames and overlays are removed from pages.
 - Fullscreen and video-player controls are explicitly exempted.
 

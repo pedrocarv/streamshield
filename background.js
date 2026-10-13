@@ -36,41 +36,37 @@ chrome.runtime.onMessage.addListener((message, sender) => {
   chrome.action.setBadgeText({ tabId, text: count > 99 ? '99+' : String(count) });
 });
 
-chrome.tabs.onCreated.addListener(async (tab) => {
-  if (!tab.openerTabId) return;
+chrome.webNavigation.onCreatedNavigationTarget.addListener(async (details) => {
   let opener;
-  try { opener = await chrome.tabs.get(tab.openerTabId); } catch (_) { return; }
+  try { opener = await chrome.tabs.get(details.sourceTabId); } catch (_) { return; }
   const protection = await getProtection(opener.url || '');
   if (!protection.enabled) return;
 
-  pendingPopupTabs.set(tab.id, {
-    openerTabId: tab.openerTabId,
+  const pending = {
+    openerTabId: details.sourceTabId,
     openerHost: getHost(opener.url || ''),
     strict: protection.strict,
     createdAt: Date.now()
-  });
-  setTimeout(async () => {
-    const pending = pendingPopupTabs.get(tab.id);
-    if (!pending) return;
+  };
+  const host = getHost(details.url);
+  const strictCrossSite = pending.strict && host && host !== pending.openerHost;
+
+  if (suspiciousHost.test(host) || strictCrossSite) {
     try {
-      const current = await chrome.tabs.get(tab.id);
-      const url = current.pendingUrl || current.url || '';
-      const host = getHost(url);
-      const blank = !url || url === 'about:blank';
-      const strictCrossSite = pending.strict && (blank || (host && host !== pending.openerHost));
-      if (suspiciousHost.test(host) || strictCrossSite) {
-        pendingPopupTabs.delete(tab.id);
-        await chrome.tabs.remove(tab.id);
-        const count = (tabCounts.get(tab.openerTabId) || 0) + 1;
-        tabCounts.set(tab.openerTabId, count);
-        await chrome.action.setBadgeBackgroundColor({ tabId: tab.openerTabId, color: '#ef4444' });
-        await chrome.action.setBadgeText({ tabId: tab.openerTabId, text: String(Math.min(count, 99)) });
-      } else if (!blank) {
-        pendingPopupTabs.delete(tab.id);
-      }
+      await chrome.tabs.remove(details.tabId);
+      const count = (tabCounts.get(details.sourceTabId) || 0) + 1;
+      tabCounts.set(details.sourceTabId, count);
+      await chrome.action.setBadgeBackgroundColor({ tabId: details.sourceTabId, color: '#ef4444' });
+      await chrome.action.setBadgeText({ tabId: details.sourceTabId, text: String(Math.min(count, 99)) });
     } catch (_) {}
-  }, 350);
-  setTimeout(() => pendingPopupTabs.delete(tab.id), 10000);
+    return;
+  }
+
+  // Only page-created navigation targets are tracked here. Tabs opened from
+  // Chrome itself (for example, Ctrl+T or the new-tab button) never enter this
+  // map and therefore remain untouched even when the source site uses strict mode.
+  pendingPopupTabs.set(details.tabId, pending);
+  setTimeout(() => pendingPopupTabs.delete(details.tabId), 10000);
 });
 
 chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {

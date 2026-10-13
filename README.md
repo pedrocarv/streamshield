@@ -21,7 +21,8 @@ Click the StreamShield toolbar icon to choose protection for the current site:
 - **Balanced protection** is the default. It allows legitimate new windows and
   tabs while blocking known or clearly suspicious ad destinations.
 - **Strict pop-up blocking** is optional per site. Use it on streaming sites
-  that keep opening unknown pop-ups or redirecting the current tab.
+  that keep opening unknown pop-ups or redirecting the current tab. Tabs opened
+  with Chrome's new-tab button or keyboard shortcut are never blocked.
 - The main protection switch pauses StreamShield completely on the current
   site. Chrome's Extensions page can disable or remove it entirely.
 

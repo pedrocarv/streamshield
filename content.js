@@ -6,20 +6,16 @@
   let blockedCount = 0;
   let toastTimer;
 
-  const hostname = location.hostname;
-
-  const applyState = (disabledHosts = [], strictHosts = []) => {
-    const enabled = !disabledHosts.includes(hostname);
-    const strict = enabled && strictHosts.includes(hostname);
+  const applyState = ({ enabled = true, strict = false } = {}) => {
     window.dispatchEvent(new CustomEvent(STATE_EVENT, {
       detail: JSON.stringify({ enabled, strict })
     }));
     document.documentElement.toggleAttribute('data-streamshield-disabled', !enabled);
   };
 
-  const refreshState = () => chrome.storage.local.get({ disabledHosts: [], strictHosts: [] }, (state) => {
-    applyState(state.disabledHosts, state.strictHosts);
-  });
+  const refreshState = () => chrome.runtime.sendMessage({ type: 'getProtection' })
+    .then(applyState)
+    .catch(() => applyState());
 
   refreshState();
 

@@ -27,13 +27,23 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-chrome.runtime.onMessage.addListener((message, sender) => {
-  if (message?.type !== 'blocked' || !sender.tab?.id) return;
-  const tabId = sender.tab.id;
-  const count = (tabCounts.get(tabId) || 0) + Number(message.count || 1);
-  tabCounts.set(tabId, count);
-  chrome.action.setBadgeBackgroundColor({ tabId, color: '#ef4444' });
-  chrome.action.setBadgeText({ tabId, text: count > 99 ? '99+' : String(count) });
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type === 'getProtection') {
+    // sender.tab.url is the top-level tab URL even when the request comes from
+    // an embedded player frame. This keeps strict mode consistent in every frame.
+    getProtection(sender.tab?.url || sender.url || '')
+      .then(sendResponse)
+      .catch(() => sendResponse({ enabled: true, strict: false }));
+    return true;
+  }
+
+  if (message?.type === 'blocked' && sender.tab?.id) {
+    const tabId = sender.tab.id;
+    const count = (tabCounts.get(tabId) || 0) + Number(message.count || 1);
+    tabCounts.set(tabId, count);
+    chrome.action.setBadgeBackgroundColor({ tabId, color: '#ef4444' });
+    chrome.action.setBadgeText({ tabId, text: count > 99 ? '99+' : String(count) });
+  }
 });
 
 chrome.webNavigation.onCreatedNavigationTarget.addListener(async (details) => {

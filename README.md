@@ -32,6 +32,7 @@ Click the StreamShield toolbar icon to choose protection for the current site:
   pop-up networks.
 - A page-level guard prevents suspicious pop-ups and redirects. Cross-site
   windows are blocked broadly only for sites where strict mode is enabled.
+  That setting is inherited by embedded video-player frames on the site.
 - Known advertising frames and overlays are removed from pages.
 - Fullscreen and video-player controls are explicitly exempted.
 
